@@ -1,18 +1,17 @@
 <script>
-	import Week from './Week.svelte';
-	const today = new Date();
-	export let year = today.getFullYear();
-	export let month = today.getMonth();
-	export let day = today.getDate();
-	export let selectedDate = new Date(year, month, day);
-	let firstOfMonth = new Date(year, month, 1);
-	let firstOfNextMonth = new Date(year, month, 1);
-	firstOfNextMonth.setMonth(firstOfNextMonth.getMonth() + 1);
-	let firstCellDate = new Date(year, month, 1);
-	firstCellDate.setDate(1 - firstOfMonth.getDay());
-	let weeks = [];
-	for (let d = new Date(firstCellDate); d < firstOfNextMonth; d.setDate(d.getDate() + 7)) {
-    weeks.push(new Date(d));
+	import calendarHelper from './calendarHelper';
+
+	export let selectedDate = new Date();
+    export let firstDayOfWeek = 0;
+	export let events = [];
+    const monthName = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), 1).toLocaleString('default', { month: 'long', year: 'numeric' });
+    const weeksInMonth = calendarHelper(selectedDate);
+    const dayNames = Array.from(Array(7), (_, i) => new Date(2000,0,2 + firstDayOfWeek + i).toLocaleString('default', { weekday: 'short' }));
+
+	function isSameDay(d1, d2) {
+		return d1.getFullYear() === d2.getFullYear() &&
+		d1.getDate() === d2.getDate() &&
+		d1.getMonth() === d2.getMonth();
 	}
 </script>
 
@@ -35,26 +34,65 @@
 		background: #fff;
 		color: #000;
 	}
+
+	.spacer {
+		background: #ddd;
+	}
+
+	td {
+		text-align: left;
+		vertical-align: top;
+		position: relative;
+		overflow: hidden;
+	}
+
+    .event-list {
+	  display: inline;
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      list-style: none;
+      margin-block-start: 0;
+      margin-block-end: 0;
+      margin-inline-start: 1em;
+      margin-inline-end: 0;
+      padding-inline-start: 0;
+    }
+
+    .event {
+      margin: 8px;
+      padding: 4px;
+      background: lightblue;
+    }
 </style>
 
 <table class="monthly calendar">
   <thead>
     <tr>
-      <th colspan="7">{firstOfMonth.toLocaleString('default', { month: 'long', year: 'numeric' })}</th>
+      <th colspan="7">{monthName}</th>
     </tr>
     <tr>
-      <td>{new Date(2000,0,2).toLocaleString('default', { weekday: 'short' })}</td>
-			<td>{new Date(2000,0,3).toLocaleString('default', { weekday: 'short' })}</td>
-			<td>{new Date(2000,0,4).toLocaleString('default', { weekday: 'short' })}</td>
-			<td>{new Date(2000,0,5).toLocaleString('default', { weekday: 'short' })}</td>
-			<td>{new Date(2000,0,6).toLocaleString('default', { weekday: 'short' })}</td>
-			<td>{new Date(2000,0,7).toLocaleString('default', { weekday: 'short' })}</td>
-			<td>{new Date(2000,0,8).toLocaleString('default', { weekday: 'short' })}</td>
+		{#each dayNames as dayName}
+			<td>{dayName}</td>
+		{/each}
     </tr>
   </thead>
   <tbody>
-		{#each weeks as week, count}
-			<Week startDate={week} selectedDate={selectedDate} />
+		{#each weeksInMonth as week}
+			<tr class="week">
+				{#each week as day}
+					<td class="day {day.getMonth() === selectedDate.getMonth() ? "" : "spacer"}">
+						<span>{day.getDate()}</span>
+						<ul class="event-list">
+							{#each (events.filter(event => isSameDay(event.start, day)) || []) as event}
+								<li class="event">{event.name}</li>	
+							{/each}
+						</ul>
+					</td>
+				{/each}
+			</tr>
 		{/each}
 	</tbody>
 </table>
